@@ -1,78 +1,24 @@
-const http = require("http");
-const path = require("path");
-const fs = require("fs");
-const fsPromises = require("fs").promises;
-const PORT = 8000;
+require("dotenv").config();
 
-const serveFile = async (filePath, contentType, response) => {
-  try {
-    const rawData = await fsPromises.readFile(
-      filePath,
-      !contentType.includes("image") ? "utf8" : ""
-    );
-    const data =
-      contentType === "application/json" ? JSON.parse(rawData) : rawData;
+const express = require("express");
+const { default: mongoose } = require("mongoose");
+const connectDB = require("./config/dbConn");
 
-    response.writeHead(filePath.includes("404.html") ? 404 : 200, {
-      "Content-Type": contentType,
-    });
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-    response.end(
-      contentType === "application/json" ? JSON.stringify(data) : data
-    );
-  } catch (err) {
-    console.log(err);
-  }
-};
+//"content-typ: application/x-www-form-urlencoded"
+app.use(express.urlencoded({ extended: false }));
 
-const server = http.createServer((req, res) => {
-  console.log(req.url, req.method);
-  //http://localhost:8000/index.css
-  const extension = path.extname(req.url);
+//build-in middleware for json
+app.use(express.json());
 
-  let contentType;
+//connect to Mongodb
+connectDB();
 
-  switch (extension) {
-    case ".css":
-      contentType = "text/css";
-      break;
-    case ".js":
-      contentType = "text/javascript";
-      break;
-    case ".json":
-      contentType = "application/json";
-      break;
-    case ".jpg":
-      contentType = "image/jpeg";
-      break;
-    case ".png":
-      contentType = "image/png";
-      break;
-    case ".txt":
-      contentType = "text/plain";
-      break;
-    default:
-      contentType = "text/html";
-  }
+app.use("/employee", require("./routes/employee/employee"));
 
-  let filePath =
-    contentType === "text/html" && req.url === "/"
-      ? path.join(__dirname, "views", "index.html")
-      : contentType === "text/html" && req.url.slice(-1) === "/"
-      ? path.join(__dirname, "views", req.url, "index.html")
-      : contentType === "text/html"
-      ? path.join(__dirname, "views", req.url)
-      : path.join(__dirname, req.url);
-
-  //make .html extension not required in the browser
-  if (!extension && req.url.slice(-1) !== "/") filePath += ".html";
-
-  const fileExists = fs.existsSync(filePath);
-
-  if (fileExists) {
-    serveFile(filePath, contentType, res);
-  } else {
-  }
+mongoose.connection.once("open", () => {
+  console.log("Connected to Mongodb");
+  app.listen(PORT, () => console.log(`server running on port ${PORT}`));
 });
-
-server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
