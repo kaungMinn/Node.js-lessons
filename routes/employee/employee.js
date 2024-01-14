@@ -6,6 +6,8 @@ const router = express.Router();
 router
   .route("/")
   .get(employeeController.getAllEmployees)
-  .post(employeeController.createEmployees);
+  .post(employeeController.createEmployees)
+  .put(employeeController.updateEmployee)
+  .delete(employeeController.deleteEmployee)
 
 module.exports = router;
