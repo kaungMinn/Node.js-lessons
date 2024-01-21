@@ -17,6 +17,8 @@ app.use(express.json());
 connectDB();
 
 app.use("/employee", require("./routes/employee/employee"));
+app.use("/register", require("./routes/auth/auth"));
+app.use("/login", require("./routes/auth/login"));
 
 mongoose.connection.once("open", () => {
   console.log("Connected to Mongodb");
